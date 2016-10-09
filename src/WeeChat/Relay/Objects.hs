@@ -106,7 +106,18 @@ getObject ARR = Arr <$> parse arr
 
 -- | Put component of 'object'.
 putObject :: Bytes.MonadPut put => Object -> put ()
+putObject (Chr c) = produce chr c
 putObject (Int n) = produce int n
+putObject (Lon n) = produce lon n
+putObject (Str s) = produce str s
+putObject (Buf b) = produce str' b
+putObject (Ptr p) = produce ptr p
+putObject (Tim t) = produce tim t
+putObject (Htb h) = produce htb h
+putObject (Hda h) = produce hda h
+putObject (Inf i) = produce inf i
+putObject (Inl i) = produce inl i
+putObject (Arr a) = produce arr a
 
 -- | Codec for an object encoded as @type,object@.
 taggedObject :: BinaryCodec Object
