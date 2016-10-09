@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes, ScopedTypeVariables #-}
 module WeeChat.Relay.Objects where
 
 import Control.Applicative
@@ -220,19 +220,11 @@ arr = typed counted proxy
   where
     proxy = foldr const (Int 0)
 
-type F a b c d e f g =
-  Codec.Field (a, b) c (d -> e -> (a, b)) (f -> g -> (a, b))
-
-f1 :: F a b a a d Codec.X d
-f1 = f_1
-
-f2 :: F a b b c b c Codec.X
-f2 = f_2
-
 (>|)
-  :: (Applicative get, Applicative put)
+  :: forall a b get put
+  . (Applicative get, Applicative put)
   => Codec get put a -> Codec get put b -> Codec get put (a, b)
-a >| b = (,) $>> f1 >-< a >>> f2 >-< b
+a >| b = ((,) :: a -> b -> (a, b)) $>> f_1 >-< a >>> f_2 >-< b
 
 -- | Chain codecs.
 bindCodec
