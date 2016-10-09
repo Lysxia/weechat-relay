@@ -9,7 +9,6 @@ import Data.Maybe
 import Data.Word
 import Prelude hiding (putStr)
 
-import Codec.Compression.Zlib
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Serialize (Get, PutM)
@@ -21,13 +20,7 @@ import qualified Data.Bytes.Get as Bytes
 import qualified Data.Bytes.Put as Bytes
 
 import Data.Time (UTCTime)
-import qualified Data.Time as Time
 import qualified Data.Time.Clock.POSIX as Time
-
-import Data.HashMap.Lazy (HashMap)
-import qualified Data.HashMap.Lazy as Hash
-import Data.Vector (Vector)
-import qualified Data.Vector as Vector
 
 import WeeChat.Relay.Objects.Types
 
@@ -277,12 +270,6 @@ counted
   -> Codec get put [a]
 counted = countedWith replicateM length
 
-countedV
-  :: (Bytes.MonadGet get, Bytes.MonadPut put)
-  => Codec get put a
-  -> Codec get put (Vector a)
-countedV = countedWith Vector.replicateM Vector.length
-
 countedWith
   :: (Bytes.MonadGet get, Bytes.MonadPut put, Foldable f)
   => (Int -> get a -> get (f a))
@@ -296,10 +283,10 @@ countedWith replicateM' length' codec = bindCodec int' codecN length'
     produce _ = mapM_ (Codec.produce codec)
 
 -- | This function is specialized at PutM but does not use it.
-parse :: Bytes.MonadGet get => Codec get PutM a -> get a
+parse :: Codec get PutM a -> get a
 parse = Codec.parse
 
 -- | This function is specialized at Get but does not use it.
-produce :: Bytes.MonadPut put => Codec Get put a -> a -> put ()
+produce :: Codec Get put a -> a -> put ()
 produce = Codec.produce
 
