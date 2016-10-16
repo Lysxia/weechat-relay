@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# LANGUAGE TemplateHaskell #-}
 module WeeChat.Relay.Objects.Types where
 
 import Data.Char
@@ -78,7 +77,3 @@ data InfoL = InfoL
   } deriving (Eq, Ord, Show, Read)
 
 type Item = [(Name, Object)]
-
-genFields ''Hdata
-genFields ''HdataItem
-genFields ''InfoL

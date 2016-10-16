@@ -12,7 +12,8 @@ import Prelude hiding (putStr)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Serialize (Get, PutM)
-import Data.Codec (Codec, ($>>), (>>>), (>-<), f_1, f_2, mapCodec, mapCodecM)
+import Data.Codec
+  (Codec, ($>>), (>>>), (>-<), f_1, f_2, mapCodec, mapCodecM, (=.))
 import qualified Data.Codec as Codec
 import Data.Bytes.Codec (BinaryCodec)
 import qualified Data.Bytes.Codec as Bytes
@@ -80,7 +81,7 @@ typeOf (Arr _) = ARR
 
 -- | Codec for an object of the given type.
 object :: ObjectType -> BinaryCodec Object
-object typ = Codec.Codec (getObject typ) putObject
+object typ = Codec.codec (getObject typ) putObject
 
 -- | Get component of 'object'.
 getObject :: Bytes.MonadGet get => ObjectType -> get Object
@@ -199,16 +200,16 @@ hItems hpath keys = counted (hItem hpath keys)
 
 hItem :: HPath -> [(ByteString, ObjectType)] -> BinaryCodec HdataItem
 hItem hpath keys = HdataItem
-  $>> f_hdaPPath >-< traverseCodec hpath (const ptr)
-  >>> f_hdaValues >-< traverseCodec keys (object . snd)
+  <$> hdaPPath =. traverseCodec hpath (const ptr)
+  <*> hdaValues =. traverseCodec keys (object . snd)
 
 inf :: BinaryCodec Info
 inf = str' >| str
 
 inl :: BinaryCodec InfoL
 inl = InfoL
-  $>> f_infoLName >-< str'
-  >>> f_infoLItems >-< items
+  <$> infoLName =. str'
+  <*> infoLItems =. items
 
 items :: BinaryCodec [Item]
 items = counted item
@@ -228,7 +229,7 @@ arr = typed counted proxy
   :: forall a b get put
   . (Applicative get, Applicative put)
   => Codec get put a -> Codec get put b -> Codec get put (a, b)
-a >| b = ((,) :: a -> b -> (a, b)) $>> f_1 >-< a >>> f_2 >-< b
+a >| b = liftA2 (,) (fst =. a) (snd =. b)
 
 -- | Chain codecs.
 bindCodec
@@ -249,7 +250,7 @@ bindCodec codecMeta codecWith metaOf = Codec.Codec parse produce
 traverseCodec
   :: (Applicative get, Applicative put)
   => [a] -> (a -> Codec get put b) -> Codec get put [b]
-traverseCodec as codec = Codec.Codec parse produce
+traverseCodec as codec = Codec.codec parse produce
   where
     parse = traverse (Codec.parse . codec) as
     produce = \bs -> traverse_ (\(a, b) -> Codec.produce (codec a) b) $ zip as bs
@@ -261,7 +262,7 @@ typed
   -> (a -> Object)
   -> Codec get put a
 typed codecWith proxy =
-  bindCodec objectType (codecWith . object) (typeOf . proxy)
+  typeOf . proxy =. objectType >>= codecWith . object
 
 -- | Encoding of an array with an 'Int' stored in the first 4 bytes.
 counted
@@ -271,22 +272,23 @@ counted
 counted = countedWith replicateM length
 
 countedWith
-  :: (Bytes.MonadGet get, Bytes.MonadPut put, Foldable f)
+  :: (Bytes.MonadGet get, Bytes.MonadPut put, Traversable f)
   => (Int -> get a -> get (f a))
   -> (f a -> Int)
   -> Codec get put a
   -> Codec get put (f a)
-countedWith replicateM' length' codec = bindCodec int' codecN length'
+countedWith replicateM' length' codec =
+  length' =. int' >>= codecN
   where
     codecN = liftA2 Codec.Codec parse produce
     parse n = replicateM' n (Codec.parse codec)
-    produce _ = mapM_ (Codec.produce codec)
+    produce _ = mapM (Codec.produce codec)
 
 -- | This function is specialized at PutM but does not use it.
 parse :: Codec get PutM a -> get a
 parse = Codec.parse
 
 -- | This function is specialized at Get but does not use it.
-produce :: Codec Get put a -> a -> put ()
-produce = Codec.produce
+produce :: Functor put => Codec Get put a -> a -> put ()
+produce codec = void . Codec.produce codec
 
