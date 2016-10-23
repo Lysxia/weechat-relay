@@ -8,21 +8,25 @@ import Data.Bool (bool)
 
 data Command
   = Init
-      (Maybe ByteString) -- ^ Password
-      (Maybe Bool) -- ^ Compression
+      (Maybe ByteString)
+      (Maybe Bool)
+    -- ^ Password, compression.
   | Hdata -- ^ TODO
   | Info ByteString -- ^ Name
   | InfoList ByteString -- ^ TODO
   | NickList (Maybe ByteString) -- ^ Buffer
   | Input
-      ByteString -- ^ Buffer
-      ByteString -- ^ Data
+      ByteString
+      ByteString
+    -- ^ Buffer, data.
   | Sync
-      [ByteString] -- ^ Buffers
-      [ByteString] -- ^ Options: buffers, upgrade, buffer, nicklist
+      [ByteString]
+      [ByteString]
+    -- ^ Buffers, options: buffers, upgrade, buffer, nicklist.
   | DeSync
-      [ByteString] -- ^ Buffers
-      [ByteString] -- ^ Options: buffers, upgrade, buffer, nicklist
+      [ByteString]
+      [ByteString]
+    -- ^ Buffers, options: buffers, upgrade, buffer, nicklist.
   | Test
   | Ping [ByteString]
   | Quit
