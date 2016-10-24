@@ -11,7 +11,7 @@ import WeeChat.Relay.Objects.Types
 data Message = Message
   { messageLength :: Int
   , messageCompressed :: Bool
-  , messageId' :: Str
+  , messageId :: Str
   , messageData :: [Object]
   } deriving (Eq, Ord, Show, Read)
 

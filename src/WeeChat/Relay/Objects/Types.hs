@@ -43,7 +43,7 @@ pattern ByteString s = Str (Just s)
 
 type Str = Maybe ByteString
 
-type Buffer = ByteString
+type Buffer = Maybe ByteString
 
 newtype Pointer = Pointer { unPointer :: ByteString }
   deriving (Eq, Ord, Show, Read)
